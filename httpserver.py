@@ -2,23 +2,35 @@
 from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
 import logging
 import json
+import rospy
+import actionlib
+from move_base_msgs.msg import MoveBaseGoal, MoveBaseAction
 
 class NaviPoint:
-    x = 0.0
-    y = 0.0
-    x = 0.0
+    frame_id = "map"
+    x1 = 0.0
+    y1 = 0.0
+    z1 = 0.0
+    x2 = 0.0
+    y2 = 0.0
+    z2 = 0.0
+    w2 = 1.0
 
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
+    def __init__(self, frame_id, x1, y1, z1, x2, y2, z2, w2):
+        self.frame_id = frame_id
+        self.x1 = x1
+        self.y1 = y1
+        self.z1 = z1
+        self.x2 = x2
+        self.y2 = y2
+        self.z2 = z2
+        self.w2 = w2
 
     def displayNaviPoint(self):
-        print ("x: %f, y: %f, z: %f\n" % (self.x, self.y, self.z))
+        print ("frame_id: %s, x1: %f, y1: %f, z1: %f\nx2: %f, y2: %f, z2: %f, w2: %f\n" % (self.frame_id, self.x1, self.y1, self.z1, self.x2, self.y2, self.z2, self.w2))
 
 def dict2point(d):
-    return NaviPoint(d['x'], d['y'], d['z'])
-
+    return NaviPoint(d['frame_id'], d['x1'], d['y1'], d['z1'], d['x2'], d['y2'], d['z2'], d['w2'])
 
 PORT_NUMBER = 8080
 
@@ -42,8 +54,7 @@ class myHandler(BaseHTTPRequestHandler):
         logging.error("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
                      str(self.path), str(self.headers), post_data.decode('utf8'))
         np1 = json.loads(post_data.decode('utf8'), object_hook=dict2point)
-        print type(np1)
-
+        send_navi_goal(np1)
 
         #self._set_response()
         #self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
@@ -53,14 +64,35 @@ class myHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write("zhangboshuai\n")
 
+    # import roslib
+    # roslib.load_manifest('my_pkg_name')
+
+def send_navi_goal(NaviPoint):
+    rospy.init_node('send_navi_goal_client')
+    client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+    client.wait_for_server(rospy.Duration(60))
+
+    goal = MoveBaseGoal()
+    goal.target_pose.header.frame_id = NaviPoint.frame_id
+    goal.target_pose.header.stamp = rospy.Time.now()
+    goal.target_pose.pose.position.x = NaviPoint.x1
+    goal.target_pose.pose.position.y = NaviPoint.y1
+    goal.target_pose.pose.position.z = NaviPoint.z1
+    goal.target_pose.pose.orientation.x = NaviPoint.x2
+    goal.target_pose.pose.orientation.y = NaviPoint.y2
+    goal.target_pose.pose.orientation.z = NaviPoint.z2
+    goal.target_pose.pose.orientation.w = NaviPoint.w2
+
+    # Fill in the goal here
+    client.send_goal(goal)
+    client.wait_for_result(rospy.Duration.from_sec(5.0))
+
 try:
     #Create a web server and define the handler to manage the
     #incoming request
-
-    np = NaviPoint(0.1, 0.2, 0.3)
-    np.displayNaviPoint()
-
-    print (json.dumps(np, default=lambda obj: obj.__dict__))
+    #np = NaviPoint('map', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
+    #np.displayNaviPoint()
+    #print (json.dumps(np, default=lambda obj: obj.__dict__))
 
     server = HTTPServer(('', PORT_NUMBER), myHandler)
     print 'Started httpserver on port ' , PORT_NUMBER
