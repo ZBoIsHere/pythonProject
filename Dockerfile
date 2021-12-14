@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y ros-melodic-joy ros-melodic-teleop-twis
   ros-melodic-move-base ros-melodic-urdf ros-melodic-xacro \
   ros-melodic-compressed-image-transport ros-melodic-rqt* \
   ros-melodic-gmapping ros-melodic-navigation ros-melodic-interactive-markers
+RUN apt-get install -y vim
 
 COPY ./httpserver.py /root/
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh

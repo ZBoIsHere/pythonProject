@@ -32,7 +32,7 @@ class NaviPoint:
 def dict2point(d):
     return NaviPoint(d['frame_id'], d['x1'], d['y1'], d['z1'], d['x2'], d['y2'], d['z2'], d['w2'])
 
-PORT_NUMBER = 8080
+PORT_NUMBER = 8081
 
 #This class will handles any incoming request from
 #the browser
@@ -54,7 +54,9 @@ class myHandler(BaseHTTPRequestHandler):
         logging.error("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
                      str(self.path), str(self.headers), post_data.decode('utf8'))
         np1 = json.loads(post_data.decode('utf8'), object_hook=dict2point)
-        send_navi_goal(np1)
+        result = send_navi_goal(np1)
+        if result:
+            rospy.logerr("Goal exec done")
 
         #self._set_response()
         #self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
@@ -70,7 +72,7 @@ class myHandler(BaseHTTPRequestHandler):
 def send_navi_goal(NaviPoint):
     rospy.init_node('send_navi_goal_client')
     client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
-    client.wait_for_server(rospy.Duration(60))
+    client.wait_for_server()
 
     goal = MoveBaseGoal()
     goal.target_pose.header.frame_id = NaviPoint.frame_id
@@ -85,7 +87,12 @@ def send_navi_goal(NaviPoint):
 
     # Fill in the goal here
     client.send_goal(goal)
-    client.wait_for_result(rospy.Duration.from_sec(5.0))
+    wait = client.wait_for_result()
+    if not wait:
+        rospy.logerr("Action server not avil")
+        rospy.signal_shutdown("Action server not avilable")
+    else:
+        return client.get_result()
 
 try:
     #Create a web server and define the handler to manage the
@@ -96,7 +103,7 @@ try:
 
     server = HTTPServer(('', PORT_NUMBER), myHandler)
     print 'Started httpserver on port ' , PORT_NUMBER
-
+    
     #Wait forever for incoming htto requests
     server.serve_forever()
 
