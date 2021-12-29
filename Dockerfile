@@ -1,17 +1,19 @@
-FROM ros:melodic
-RUN apt-get update && apt-get install -y ros-melodic-joy ros-melodic-teleop-twist-joy \
-  ros-melodic-teleop-twist-keyboard ros-melodic-laser-proc \
-  ros-melodic-rgbd-launch ros-melodic-depthimage-to-laserscan \
-  ros-melodic-rosserial-arduino ros-melodic-rosserial-python \
-  ros-melodic-rosserial-server ros-melodic-rosserial-client \
-  ros-melodic-rosserial-msgs ros-melodic-amcl ros-melodic-map-server \
-  ros-melodic-move-base ros-melodic-urdf ros-melodic-xacro \
-  ros-melodic-compressed-image-transport ros-melodic-rqt* \
-  ros-melodic-gmapping ros-melodic-navigation ros-melodic-interactive-markers
-RUN apt-get install -y vim
+FROM ros:noetic
+SHELL ["/bin/bash", "-c"]
+#COPY ./proxy/bashrcproxy /root/
+#RUN cat /root/bashrcproxy >> /root/.bashrc
+#COPY ./proxy/apt.conf /etc/apt
+#RUN sed '1i\nameserver 127.0.0.53' /etc/resolv.conf
+#RUN source /root/.bashrc
+#RUN cp -a /etc/apt/sources.list /etc/apt/sources.list.bk
+#RUN sudo sed -i "s@http://.*ports.ubuntu.com@http://mirrors.tools.huawei.com@g" /etc/apt/sources.list
+#RUN sudo sed -i "s@http://.*security.ubuntu.com@http://mirrors.tools.huawei.com@g" /etc/apt/sources.list
+#RUN sudo sh -c '. /etc/lsb-release && echo "deb http://mirrors.ustc.edu.cn/ros/ubuntu/ lsb_release -cs main" > /etc/apt/sources.list.d/ros1-latest.list'
+RUN apt-get update && apt-get install -y ros-noetic-move-base ros-noetic-navigation
+#RUN apt-get install -y vim
 
-COPY ./httpserver.py /root/
+COPY ./*.py /root/
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-RUN source /opt/ros/melodic/setup.bash
-ENV PYTHONPATH /opt/ros/melodic/lib/python2.7/dist-packages
-ENTRYPOINT ["python2.7", "/root/httpserver.py"]
+RUN source /opt/ros/noetic/setup.bash
+ENV PYTHONPATH /opt/ros/noetic/lib/python3/dist-packages
+ENTRYPOINT ["python3", "-u", "/root/httpserver.py"]
