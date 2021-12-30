@@ -8,7 +8,7 @@ import rospy
 from move_base_msgs.msg import MoveBaseGoal, MoveBaseAction
 import navipoint
 
-PORT_NUMBER = 8080
+PORT_NUMBER = 8081
 
 class myHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -53,12 +53,13 @@ def send_navi_goal(np):
 
     # Fill in the goal here
     client.send_goal(goal)
-    wait = client.wait_for_result()
-    if not wait:
+    doneBeforeTimeout = client.wait_for_result(rospy.Duration(1.0))
+    if not doneBeforeTimeout:
         rospy.logerr("Action server not avil")
         rospy.signal_shutdown("Action server not avilable")
     else:
-        rospy.loginfo(client.get_result())
+        ret = client.get_state()
+        rospy.loginfo('task done : %s', ret.__str__())
 
 try:
     rospy.init_node('send_navi_goal_client1')

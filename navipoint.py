@@ -4,9 +4,10 @@ SendFailed = 'failed'
 SendSuccess = 'success'
 
 class MessageDomain:
-    def __init__(self, robot_id = 'robot_id', type = 'control'):
+    def __init__(self, robot_id = 'robot_id', type = 'control', command = 0):
         self.robot_id = robot_id
         self.type = type
+        self.command = command
         self.message = MessageEntityDomain()
 
 class MessageEntityDomain:
@@ -58,6 +59,7 @@ def json2MessageDomain(md):
     np = MessageDomain()
     np.robot_id = map['robot_id']
     np.type = map['type']
+    np.command = map['command']
     np.message.header.stamp.sec = map['message']['header']['stamp']['sec']
     np.message.header.stamp.nanosec = map['message']['header']['stamp']['nanosec']
     np.message.header.frame_id = map['message']['header']['frame_id']
